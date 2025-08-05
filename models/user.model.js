@@ -19,8 +19,12 @@ const userSchema = mongoose.Schema({
         required: true
     },
     resetPasswordToken: String,
-    resetPasswordExpire: Date
-
+    resetPasswordExpire: Date,
+    role: {
+        type: String,
+        enum: ['user', 'admin'],
+        default: 'user'
+    }
 }, { timestamps: true })
 
 //function to save the password if its been changed or altered
@@ -40,15 +44,17 @@ userSchema.methods.isPasswordCorrect = async function (password) {
 userSchema.methods.generateAccessToken = function () {
     return jwt.sign(
         {
+            userId: this._id,
             username: this.username,
-            email: this.email
+            email: this.email,
+            role: this.role
         },
         process.env.ACCESS_TOKEN_SECRET,
         {
             expiresIn: process.env.ACCESS_TOKEN_EXPIRY
         }
-    )
-}
+    );
+};
 
 //function to generate refresh token for the user
 userSchema.methods.generateRefreshToken = function () {

@@ -4,6 +4,7 @@ dotenv.config();
 import cors from "cors"
 import cookieParser from "cookie-parser"
 import userRoutes from "./routes/user.routes.js"
+import adminRoutes from "./routes/admin.routes.js"
 
 const app = express();
 
@@ -20,5 +21,6 @@ app.use(cookieParser());
 
 //routes
 app.use("/", userRoutes)
+app.use('/admin', adminRoutes);
 
 export { app }
