@@ -18,9 +18,11 @@ const noteSchema = mongoose.Schema({
         required: true
     },
     tags: {
-        type: String
+        type: [String],
+        default: [],
     }
-},{timestamps: true})
+
+}, { timestamps: true })
 
 
 export const Note = mongoose.model("Note", noteSchema)

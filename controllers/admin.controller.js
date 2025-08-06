@@ -1,4 +1,5 @@
 import { Users } from "../models/user.model.js";
+import { Note } from "../models/note.model.js";
 
 const getAllUsers = async (req, res) => {
     const users = await Users.find().select("-password")
@@ -60,7 +61,6 @@ const updateRole = async (req, res) => {
     }
     res.json({ message: "User upadted successfully" })
 }
-
 
 export {
     getAllUsers,
