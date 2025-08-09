@@ -7,7 +7,7 @@ import cookieParser from "cookie-parser";
 dotenv.config()
 app.use(express.json());
 app.use(cookieParser());
-
+app.use(express.static('public'));
 dbConnection()
 
     .then(() => {

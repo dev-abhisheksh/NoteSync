@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Fetch User Notes</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- CSS Styling (Put in <style> for demo, move to .css file if you want) -->
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #f7fafc;
+            margin: 0;
+            padding: 0;
+        }
+        h1 {
+            text-align: center;
+            margin-top: 2rem;
+            color: #3d4852;
+        }
+        .action-section {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 2rem;
+        }
+        button {
+            background: #2b6cb0;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 0.8em 2em;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background 0.17s;
+            box-shadow: 0 2px 8px rgba(44, 62, 80, 0.08);
+        }
+        button:hover {
+            background: #4299e1;
+        }
+        .notes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5em;
+            padding: 2em;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .note-card {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 16px rgba(59, 130, 246, 0.07);
+            padding: 1.3em 1.1em;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            transition: box-shadow 0.17s;
+        }
+        .note-card:hover {
+            box-shadow: 0 8px 24px rgba(24, 61, 89, 0.11);
+        }
+        .note-title {
+            font-weight: bold;
+            font-size: 1.25em;
+            color: #2c5282;
+            margin-bottom: 0.35em;
+        }
+        .note-content {
+            color: #374151;
+            font-size: 1.04em;
+            margin-bottom: 0.5em;
+        }
+        .note-tags {
+            margin-top: 0.55em;
+        }
+        .note-tag {
+            display: inline-block;
+            background: #bbeecc;
+            color: #25735e;
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 0.87em;
+            margin-right: 6px;
+            margin-bottom: 4px;
+        }
+        .note-status {
+            position: absolute;
+            top: 1em;
+            right: 1em;
+            background: #e2e8f0;
+            color: #444;
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 0.81em;
+            font-weight: 500;
+        }
+        .empty-msg {
+            text-align: center;
+            color: #64748b;
+            margin-top: 2rem;
+        }
+        .error-msg {
+            text-align: center;
+            color: #d53f8c;
+            margin-top: 2rem;
+            background: #fff0f4;
+            border-radius: 7px;
+            padding: 0.6em 1em;
+            max-width: 420px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Fetch My Notes</h1>
+    <div class="action-section">
+        <!-- <button onclick="fetchNotes()">Get My Notes</button> -->
+    </div>
+    <div id="output"></div>
+
+    <script>
+    async function fetchNotes() {
+        const outputDiv = document.getElementById('output');
+        outputDiv.innerHTML = ''; // Clear previous
+
+        try {
+            const response = await fetch('http://localhost:5000/get-user-notes', {
+                method: 'GET',
+                credentials: 'include'
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            const notes = data.notes || [];
+
+            if (!notes.length) {
+                outputDiv.innerHTML = `<div class="empty-msg">No notes found!</div>`;
+                return;
+            }
+
+            const grid = document.createElement('div');
+            grid.className = 'notes-grid';
+
+            notes.forEach(note => {
+                const card = document.createElement('div');
+                card.className = 'note-card';
+
+                // Status tag
+                card.innerHTML += `<span class="note-status ${note.isPublic ? 'public' : 'private'}">${note.isPublic ? "Public" : "Private"}</span>`;
+
+                // Title
+                card.innerHTML += `<div class="note-title">${note.name || "Untitled"}</div>`;
+
+                // Content
+                card.innerHTML += `<div class="note-content">${note.content || ""}</div>`;
+
+                // Tags
+                if (note.tags && note.tags.length) {
+                    card.innerHTML += `<div class="note-tags">${note.tags.map(tag =>
+                        `<span class="note-tag">${tag}</span>`
+                    ).join('')}</div>`;
+                }
+
+                // Created date
+                card.innerHTML += `<div class="note-date">
+                    Created: ${new Date(note.createdAt).toLocaleDateString()} 
+                    ${new Date(note.createdAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}
+                </div>`;
+
+                grid.appendChild(card);
+            });
+
+            outputDiv.appendChild(grid);
+
+        } catch (err) {
+            outputDiv.innerHTML = `<div class="error-msg">Error fetching notes.<br>${err.message || err}</div>`;
+        }
+    }
+
+    // Fetch notes when page loads
+    document.addEventListener('DOMContentLoaded', fetchNotes);
+</script>
+
+</body>
+</html>

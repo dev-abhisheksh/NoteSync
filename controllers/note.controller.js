@@ -46,27 +46,46 @@ const editNote = async (req, res) => {
     return res.status(200).json({ message: "Upafted successfullt", note })
 }
 
-const getSingleNote = async (req, res) => {
+// const getSingleUserNotes = async (req, res) => {
+//     try {
+//         const { username } = req.cookies;
+//         if (!username) {
+//             return res.status(400).json({ message: "Enter usename" })
+//         }
+
+//         const user = await Users.findOne({ username })
+//         if (!user) {
+//             return res.status(404).json({ message: "User not found" })
+//         }
+
+//         const notes = await Note.find({ owner: user._id });
+//         if (notes.length === 0) {
+//             return res.status(404).json({ message: "No notes found for this user", notes: [] });
+//         }
+//         console.log("notes", notes)
+//         return res.status(200).json({ message: "Fetched notes successsfull", notes })
+//     } catch (error) {
+//         return res.status(500).json({ message: "Failed to fetch notes" })
+//     }
+// }
+const getSingleUserNotes = async (req, res) => {
     try {
-        const { username } = req.body;
-        if (!username) {
-            return res.status(400).json({ message: "Enter usename" })
-        }
+        // Get the authenticated user from req.user
+        const user = req.user;
 
-        const user = await Users.findOne({ username })
-        if (!user) {
-            return res.status(404).json({ message: "User not found" })
-        }
-
+        // Fetch notes
         const notes = await Note.find({ owner: user._id });
-        if (notes.length === 0) {
-            return res.status(404).json({ message: "No notes found for this user", notes: [] });
-        }
-        return res.status(200).json({ message: "Fetched notes successsfull", notes })
+
+        // Return notes
+        return res.status(200).json({
+            message: notes.length ? "Fetched notes successfully" : "No notes found for this user",
+            notes: notes
+        });
     } catch (error) {
-        return res.status(500).json({ message: "Failed to fetch notes" })
+        return res.status(500).json({ message: "Failed to fetch notes", error: error.message });
     }
-}
+};
+
 
 
 const deleteNote = async (req, res) => {
@@ -100,6 +119,6 @@ export {
     editNote,
     deleteNote,
     getAllNotes,
-    getSingleNote,
+    getSingleUserNotes,
     searchNotesByTag
 }
