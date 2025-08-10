@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>User Admin Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f3f4f6;
+            color: #333;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 1rem;
+            color: #2563eb;
+        }
+
+        .tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+            cursor: pointer;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            background: #e0e7ff;
+            margin: 0 5px;
+            border-radius: 8px 8px 0 0;
+            font-weight: bold;
+            color: #4f46e5;
+        }
+
+        .tab.active {
+            background: #4f46e5;
+            color: white;
+            cursor: default;
+        }
+
+        .form-container {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            max-width: 480px;
+            margin: 0 auto;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.15);
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            margin-top: 15px;
+            font-weight: 600;
+        }
+
+        input,
+        select,
+        button {
+            margin-top: 6px;
+            padding: 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+
+        button {
+            background: #4f46e5;
+            color: white;
+            border: none;
+            margin-top: 20px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #3730a3;
+        }
+
+        pre {
+            background: #f1f5f9;
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        /* Hide all forms by default */
+        .form-section {
+            display: none;
+        }
+
+        /* Show active form */
+        .form-section.active {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>User Admin Dashboard</h1>
+
+    <div class="tabs">
+        <div class="tab active" data-tab="getAllUsers">Get All Users</div>
+        <div class="tab" data-tab="getUser">Get User</div>
+        <div class="tab" data-tab="deleteUser">Delete User</div>
+        <div class="tab" data-tab="updateRole">Update Role</div>
+    </div>
+
+    <div class="form-container">
+        <!-- Get All Users -->
+        <section id="getAllUsers" class="form-section active">
+            <h2>Get All Users</h2>
+            <button id="fetchAllUsersBtn">Fetch All Users</button>
+            <pre id="allUsersOutput"></pre>
+        </section>
+
+        <!-- Get User -->
+        <section id="getUser" class="form-section">
+            <h2>Get User By Username</h2>
+            <form id="getUserForm">
+                <input type="text" name="username" placeholder="Username" />
+                <button type="submit">Get User</button>
+            </form>
+            <pre id="getUserOutput"></pre>
+        </section>
+
+        <!-- Delete User -->
+        <section id="deleteUser" class="form-section">
+            <h2>Delete User By Username</h2>
+            <form id="deleteUserForm">
+                <input type="text" name="username" placeholder="Username" required />
+                <button type="submit">Delete User</button>
+            </form>
+            <pre id="deleteUserOutput"></pre>
+        </section>
+
+        <!-- Update Role -->
+        <section id="updateRole" class="form-section">
+            <h2>Update User Role</h2>
+            <form id="updateRoleForm">
+                <input type="text" name="username" placeholder="Username" required />
+                <select name="role" required>
+                    <option value="" disabled selected>Select Role</option>
+                    <option value="user">User</option>
+                    <option value="admin">Admin</option>
+                </select>
+                <button type="submit">Update Role</button>
+            </form>
+            <pre id="updateRoleOutput"></pre>
+        </section>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                const form = document.getElementById('updateRoleForm');
+                const output = document.getElementById('updateRoleOutput');
+
+                form.addEventListener('submit', async (e) => {
+                    e.preventDefault(); // stop page reload
+
+                    output.textContent = 'Updating...';
+
+                    const username = form.username.value.trim();
+                    const role = form.role.value;
+
+                    if (!username || !role) {
+                        output.textContent = 'Username and role are required.';
+                        return;
+                    }
+
+                    try {
+                        const response = await fetch('http://localhost:5000/api/admin/users/role', {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            credentials: 'include', // if using cookies
+                            body: JSON.stringify({ username, role }),
+                        });
+
+                        if (!response.ok) {
+                            const text = await response.text();
+                            throw new Error(`Server returned ${response.status}: ${text}`);
+                        }
+
+                        const data = await response.json();
+                        output.textContent = JSON.stringify(data, null, 2);
+
+                    } catch (error) {
+                        output.textContent = `Error: ${error.message || error}`;
+                    }
+                });
+            });
+        </script>
+
+    </div>
+
+    <script>
+        // Tab navigation logic
+        const tabs = document.querySelectorAll('.tab');
+        const sections = document.querySelectorAll('.form-section');
+
+        function setActiveTab(tabName) {
+            tabs.forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.tab === tabName);
+            });
+            sections.forEach(section => {
+                section.classList.toggle('active', section.id === tabName);
+            });
+        }
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                setActiveTab(tab.dataset.tab);
+            });
+        });
+
+        // Get All Users
+        document.getElementById('fetchAllUsersBtn').addEventListener('click', async () => {
+            const output = document.getElementById('allUsersOutput');
+            output.textContent = 'Loading...';
+            try {
+                const response = await fetch('http://localhost:5000/api/admin/users');
+                const data = await response.json();
+                output.textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                output.textContent = `Error: ${error.message || error}`;
+            }
+        });
+
+        // Get User
+        document.getElementById('getUserForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const output = document.getElementById('getUserOutput');
+    output.textContent = 'Loading...';
+
+    const username = e.target.username.value.trim();
+
+    try {
+        const response = await fetch('http://localhost:5000/api/admin/user', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            // Show backend's message directly
+            output.textContent = data.message || `Error ${response.status}`;
+            return;
+        }
+
+        // If success, show result
+        output.textContent = data.message || JSON.stringify(data, null, 2);
+
+    } catch (error) {
+        // This will only happen if fetch fails entirely
+        output.textContent = `Request failed: ${error.message}`;
+    }
+});
+
+        // Delete User
+        document.getElementById('deleteUserForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const output = document.getElementById('deleteUserOutput');
+            output.textContent = 'Processing...';
+
+            const username = e.target.username.value.trim();
+
+            try {
+                const response = await fetch('http://localhost:5000/api/admin/users', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ username })
+                });
+
+                if (!response.ok) {
+                    const text = await response.text();
+                    throw new Error(`Server returned ${response.status}: ${text}`);
+                }
+
+                const data = await response.json();
+                output.textContent = JSON.stringify(data, null, 2);
+
+            } catch (error) {
+                output.textContent = `Error: ${error.message || error}`;
+            }
+        });
+
+        app.delete("/api/admin/users", async (req, res) => {
+            try {
+                const { username } = req.body;
+                if (!username) {
+                    return res.status(400).json({ message: "Username is required" });
+                }
+
+                const result = await Users.findOneAndDelete({ username });
+
+                if (!result) {
+                    return res.status(404).json({ message: "User not found" });
+                }
+
+                res.json({ message: `User '${username}' deleted successfully` });
+            } catch (err) {
+                res.status(500).json({ message: "Server error", error: err.message });
+            }
+        });
+
+        // Update Role
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('updateRoleForm');
+            const output = document.getElementById('updateRoleOutput');
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault(); // stop page reload
+
+                output.textContent = 'Updating...';
+
+                const username = form.username.value.trim();
+                const role = form.role.value;
+
+                if (!username || !role) {
+                    output.textContent = 'Username and role are required.';
+                    return;
+                }
+
+                try {
+                    const response = await fetch('http://localhost:5000/api/admin/users/role', {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include', // if using cookies
+                        body: JSON.stringify({ username, role }),
+                    });
+
+                    if (!response.ok) {
+                        const text = await response.text();
+                        throw new Error(`Server returned ${response.status}: ${text}`);
+                    }
+
+                    const data = await response.json();
+                    output.textContent = JSON.stringify(data, null, 2);
+
+                } catch (error) {
+                    output.textContent = `Error: ${error.message || error}`;
+                }
+            });
+        });
+
+    </script>
+
+</body>
+
+</html>

@@ -76,7 +76,7 @@ const getSingleUserNotes = async (req, res) => {
         // Fetch notes
         const notes = await Note.find({ owner: user._id });
 
-        // Return notes
+        console
         return res.status(200).json({
             message: notes.length ? "Fetched notes successfully" : "No notes found for this user",
             notes: notes
@@ -88,15 +88,26 @@ const getSingleUserNotes = async (req, res) => {
 
 
 
+// DELETE /api/notes/:id
 const deleteNote = async (req, res) => {
-    const { id } = req.body;
-    if (!id) {
-        return res.status(400).json({ message: "Provide id of the nite to delete it" })
-    }
+    try {
+        const { id } = req.params; // get ID from URL
+        if (!id) {
+            return res.status(400).json({ message: "Provide note ID to delete it" });
+        }
 
-    await Note.findByIdAndDelete(id);
-    return res.status(200).json({ message: "note deleted successfully" })
-}
+        const deletedNote = await Note.findByIdAndDelete(id);
+        if (!deletedNote) {
+            return res.status(404).json({ message: "Note not found" });
+        }
+
+        return res.status(200).json({ message: "Note deleted successfully" });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: "Server error" });
+    }
+};
+
 
 //search
 

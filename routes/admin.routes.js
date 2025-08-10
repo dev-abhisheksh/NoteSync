@@ -8,9 +8,9 @@ const router = express.Router();
 router.use(authenticateUsers, authorizeRoles('admin'));
 
 router.get('/users', getAllUsers);
-router.get('/user', getUserById);
+router.post('/user', getUserById);
 router.delete('/users/', deleteUser);
-router.put('/users/role', updateRole);
+router.patch('/users/role', updateRole);
 
 //Note routes
 

@@ -7,14 +7,12 @@ const getAllUsers = async (req, res) => {
 }
 
 const getUserById = async (req, res) => {
-    const { _id, email, username } = req.body;
+    const { username } = req.body;
 
-    if (!_id && !username && !email) {
-        return res.status(401).json({ message: "Give unique identifier" })
+    if (!username) {
+        return res.status(400).json({ message: "Give unique identifier" })
     }
-    const user = await Users.findOne({
-        $or: [{ _id }, { username }, { email }]
-    })
+    const user = await Users.findOne({ username }).select("-password");
     // const user = await Users.findById(req.params.id).select("-password");
     if (!user) {
         return res.status(404).json({ message: "User not foudn" })
@@ -23,15 +21,13 @@ const getUserById = async (req, res) => {
 }
 
 const deleteUser = async (req, res) => {
-    const { _id, email } = req.body;
+    const { username } = req.body;
 
-    if (!email && !_id) {
+    if (!username) {
         return res.status(401).json({ message: "provide id or email to delete" })
     }
 
-    const user = await Users.findOneAndDelete({
-        $or: [{ email: email }, { _id: _id }]
-    })
+    const user = await Users.findOneAndDelete({ username }).select("-password");
     if (!user) {
         return res.status(404).json({ message: "User not found" });
     }
@@ -41,26 +37,37 @@ const deleteUser = async (req, res) => {
 
 
 const updateRole = async (req, res) => {
-    const { username, email, _id, role } = req.body;
-    if (!['user', 'admin'].includes(role)) {
-        return res.status(400).json({ message: "Invalid role" })
-    }
+    try {
+        const { username, role } = req.body;
 
-    const user = await Users.findOneAndUpdate(
-        { $or: [{ username }, { email }, { _id }] },
-        {
-            $set: {
-                role: role
-            }
-        },
-        { new: true }
-    ).select("-password")
+        if (!username || !role) {
+            return res.status(400).json({ message: "Username and role are required" });
+        }
 
-    if (!user) {
-        return res.status(404).json({ message: "User nit found" })
+        if (!['user', 'admin'].includes(role)) {
+            return res.status(400).json({ message: "Invalid role" });
+        }
+
+        const user = await Users.findOneAndUpdate(
+            { username: { $regex: `^${username}$`, $options: 'i' } }, // case-insensitive match
+            { $set: { role } },
+            { new: true }
+        ).select("-password");
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        console.log("Frontend sent:", username, role);
+
+        res.json({ message: `Role updated to '${role}'`, user });
+
+    } catch (err) {
+        res.status(500).json({ message: "Server error", error: err.message });
     }
-    res.json({ message: "User upadted successfully" })
-}
+};
+
+
 
 export {
     getAllUsers,

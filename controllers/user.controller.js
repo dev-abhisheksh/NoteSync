@@ -1,4 +1,5 @@
 import { Users } from "../models/user.model.js";
+import { Note } from "../models/note.model.js"; // adjust path as needed
 import mongoose from "mongoose";
 import bcryptjs from "bcryptjs"
 import jwt from "jsonwebtoken"
@@ -276,6 +277,36 @@ const resetPassword = async (req, res) => {
     });
 };
 
+// controllers/notesController.js
+const updateNote = async (req, res) => {
+    try {
+        const { id } = req.params; // Get the note ID from the URL
+        const { title, content, tags, isPublic } = req.body; // Get updated data
+
+        // Find the note by ID and update it
+        const updatedNote = await Note.findByIdAndUpdate(
+            id,
+            { title, content, tags, isPublic }, // Update all provided fields
+            { new: true, runValidators: true } // Return updated note & validate
+        );
+
+        // If note not found
+        if (!updatedNote) {
+            return res.status(404).json({ message: "Note not found" });
+        }
+
+        // Success
+        res.json({
+            message: "Note updated successfully",
+            note: updatedNote
+        });
+
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+
 
 export {
     registerUser,
@@ -285,5 +316,6 @@ export {
     updateProfile,
     updatePassword,
     forgotPassword,
-    resetPassword
+    resetPassword,
+    updateNote
 }
