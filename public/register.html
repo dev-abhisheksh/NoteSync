@@ -10,42 +10,45 @@
 </section>
 
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-    const form = document.getElementById('registerForm');
-    const output = document.getElementById('registerOutput');
+    document.addEventListener('DOMContentLoaded', () => {
+        const form = document.getElementById('registerForm');
+        const output = document.getElementById('registerOutput');
 
-    form.addEventListener('submit', async (e) => {
-        e.preventDefault();
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
 
-        output.textContent = 'Registering...';
+            output.textContent = 'Registering...';
 
-        const username = form.username.value.trim();
-        const email = form.email.value.trim();
-        const password = form.password.value;
+            const username = form.username.value.trim();
+            const email = form.email.value.trim();
+            const password = form.password.value;
 
-        try {
-            const response = await fetch('http://localhost:5000/register', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    username,
-                    email,
-                    password,
-                    role: 'user' // default role
-                }),
-            });
+            try {
+                const response = await fetch('http://localhost:5000/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username,
+                        email,
+                        password,
+                        role: 'user' // default role
+                    }),
+                });
 
-            if (!response.ok) {
-                const text = await response.text();
-                throw new Error(`Server returned ${response.status}: ${text}`);
+                if (!response.ok) {
+                    const text = await response.text();
+                    throw new Error(`Server returned ${response.status}: ${text}`);
+                }
+
+                const data = await response.json();
+                output.textContent = JSON.stringify(data, null, 2);
+                setTimeout(() => {
+                    window.location.href = '/login.html'; // change path if needed
+                }, 1000);
+                
+            } catch (error) {
+                output.textContent = `Error: ${error.message || error}`;
             }
-
-            const data = await response.json();
-            output.textContent = JSON.stringify(data, null, 2);
-
-        } catch (error) {
-            output.textContent = `Error: ${error.message || error}`;
-        }
+        });
     });
-});
 </script>

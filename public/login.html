@@ -13,6 +13,10 @@
   </form>
 
   <p id="message" style="color: red;"></p>
+  
+  <button onclick="window.location.href='/register.html'">Doesn't have an account!</button>
+  <button onclick="window.location.href='/admin.html'">U an admin?!!!</button>
+
 
   <script>
     document.getElementById("loginForm").addEventListener("submit", async function(e) {
@@ -35,7 +39,7 @@
         document.getElementById("message").textContent = "Login successful! Redirecting...";
 
         setTimeout(() => {
-          // window.location.href = "/dashboard";
+          window.location.href = "/dashboard";
         }, 1000);
 
       } catch (err) {

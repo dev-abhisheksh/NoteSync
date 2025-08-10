@@ -108,7 +108,14 @@
 
 <body>
 
-    <h1>User Admin Dashboard</h1>
+    <h1 style="text-align:center;">
+        <a href="/dashboard.html"
+            style="color:#357ABD; text-decoration:none; font-weight:700; font-size:2em; font-family:'Segoe UI', Arial, sans-serif;">
+            User Admin Dashboard
+        </a>
+    </h1>
+
+
 
     <div class="tabs">
         <div class="tab active" data-tab="getAllUsers">Get All Users</div>
@@ -238,35 +245,35 @@
 
         // Get User
         document.getElementById('getUserForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const output = document.getElementById('getUserOutput');
-    output.textContent = 'Loading...';
+            e.preventDefault();
+            const output = document.getElementById('getUserOutput');
+            output.textContent = 'Loading...';
 
-    const username = e.target.username.value.trim();
+            const username = e.target.username.value.trim();
 
-    try {
-        const response = await fetch('http://localhost:5000/api/admin/user', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username }),
+            try {
+                const response = await fetch('http://localhost:5000/api/admin/user', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username }),
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    // Show backend's message directly
+                    output.textContent = data.message || `Error ${response.status}`;
+                    return;
+                }
+
+                // If success, show result
+                output.textContent = data.message || JSON.stringify(data, null, 2);
+
+            } catch (error) {
+                // This will only happen if fetch fails entirely
+                output.textContent = `Request failed: ${error.message}`;
+            }
         });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            // Show backend's message directly
-            output.textContent = data.message || `Error ${response.status}`;
-            return;
-        }
-
-        // If success, show result
-        output.textContent = data.message || JSON.stringify(data, null, 2);
-
-    } catch (error) {
-        // This will only happen if fetch fails entirely
-        output.textContent = `Request failed: ${error.message}`;
-    }
-});
 
         // Delete User
         document.getElementById('deleteUserForm').addEventListener('submit', async (e) => {
