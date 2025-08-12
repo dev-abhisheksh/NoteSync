@@ -214,7 +214,7 @@
 
         try {
           // send to same-origin endpoint: POST /reset-password/:token
-          const res = await fetch(`/reset-password/${encodeURIComponent(token)}`, {
+          const res = await fetch(`https://notesync-0m77.onrender.com/reset-password/${encodeURIComponent(token)}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'same-origin',

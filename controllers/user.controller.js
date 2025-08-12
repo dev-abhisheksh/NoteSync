@@ -93,7 +93,7 @@ const loginUser = async (req, res) => {
 
         const options = {
             httpOnly: true,
-            secure: false,  // Changed to false for HTTP testing
+            secure: true,  // Changed to false for HTTP testing
             sameSite: 'lax'
         }
 

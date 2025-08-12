@@ -527,7 +527,7 @@
 
             // resultsDiv.innerHTML = '<div class="loading">Searching...</div>';
 
-            fetch("http://localhost:5000/search", {
+            fetch("https://notesync-0m77.onrender.com/search", {
                 method: "POST",
                 headers: {
                     'Content-Type': 'application/json'
@@ -581,7 +581,7 @@
             // outputDiv.innerHTML = '<div class="loading">Loading your notes...</div>';
 
             try {
-                const response = await fetch('http://localhost:5000/get-user-notes', {
+                const response = await fetch('https://notesync-0m77.onrender.com/get-user-notes', {
                     method: 'GET',
                     credentials: 'include'
                 });
@@ -653,7 +653,7 @@
             if (!confirm("Are you sure you want to delete this note?")) return;
 
             try {
-                const res = await fetch(`http://localhost:5000/delete-note/${noteId}`, {
+                const res = await fetch(`https://notesync-0m77.onrender.com/delete-note/${noteId}`, {
                     method: 'DELETE',
                     credentials: 'include'
                 });
@@ -678,7 +678,7 @@
             };
 
             try {
-                const res = await fetch(`http://localhost:5000/update-note/${currentEditId}`, {
+                const res = await fetch(`https://notesync-0m77.onrender.com/update-note/${currentEditId}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
