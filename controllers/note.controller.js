@@ -110,33 +110,59 @@ const deleteNote = async (req, res) => {
 
 
 //search
+// const searchNotesByTag = async (req, res) => {
+//     try {
+//         const { tags } = req.body;
+
+//         if (!tags || !Array.isArray(tags) || tags.length === 0) {
+//             return res.status(400).json({ message: "Tags array is required" });
+//         }
+
+//         const searchedNotes = await Note.find({
+//             tags: { $in: tags },
+//             isPublic: true // ✅ Only fetch public notes
+//         });
+
+//         if (!searchedNotes || searchedNotes.length === 0) {
+//             return res.status(404).json({ message: "No public notes found for given tags" });
+//         }
+
+//         return res.status(200).json({
+//             message: "Successfully fetched public notes based on tags",
+//             searchedNotes
+//         });
+
+//     } catch (error) {
+//         console.error(error);
+//         return res.status(500).json({ message: "Server error while searching notes" });
+//     }
+// };
 const searchNotesByTag = async (req, res) => {
     try {
-        const { tags } = req.body;
+        let { tags } = req.body; // could be a string or array
 
-        if (!tags || !Array.isArray(tags) || tags.length === 0) {
-            return res.status(400).json({ message: "Tags array is required" });
+        // Ensure it's always an array
+        if (!Array.isArray(tags)) {
+            tags = [tags];
         }
 
         const searchedNotes = await Note.find({
             tags: { $in: tags },
-            isPublic: true // ✅ Only fetch public notes
+            isPublic: true
         });
-
-        if (!searchedNotes || searchedNotes.length === 0) {
-            return res.status(404).json({ message: "No public notes found for given tags" });
-        }
 
         return res.status(200).json({
-            message: "Successfully fetched public notes based on tags",
+            message: searchedNotes.length
+                ? "Successfully fetched public notes based on tags"
+                : "No notes found for given tag",
             searchedNotes
         });
-
     } catch (error) {
-        console.error(error);
-        return res.status(500).json({ message: "Server error while searching notes" });
+        console.error("Error in searchNotesByTag:", error);
+        return res.status(500).json({ message: "Server error", error });
     }
 };
+
 
 
 

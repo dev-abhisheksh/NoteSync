@@ -13,6 +13,22 @@
             padding: 0;
         }
 
+        .navbar {
+            background: #2c5282;
+            padding: 10px 20px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .navbar input {
+            padding: 6px 10px;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
         h1 {
             text-align: center;
             margin-top: 2rem;
@@ -166,9 +182,17 @@
 </head>
 
 <body>
+    <div class="navbar">
+        <span>NoteSync</span>
+        <input type="text" id="searchInput" placeholder="Search by tag..." onkeyup="searchNotes()">
+    </div>
+
     <button onclick="window.location.href='/login.html'">Login</button>
     <h1 id="Username">Fetch My Notes</h1>
     <div id="output"></div>
+
+    <h2 style="text-align:center;">Search Results</h2>
+    <div id="searchResults"></div>
 
     <!-- Edit Modal -->
     <div id="editModal" class="modal">
@@ -243,6 +267,65 @@
                 outputDiv.innerHTML = `<p>Error fetching notes: ${err.message}</p>`;
             }
         }
+
+        async function searchNotes() {
+    const query = document.getElementById('searchInput').value.trim();
+    const resultsDiv = document.getElementById('searchResults');
+    resultsDiv.innerHTML = '';
+
+    if (!query) return;
+
+    try {
+        const res = await fetch("http://localhost:5000/search", {
+            method: "POST",
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: "include",
+            body: JSON.stringify({
+                tags: query // Send as POST body
+            })
+        });
+
+        const data = await res.json();
+
+        // If backend returns an error object
+        if (!res.ok) {
+            resultsDiv.innerHTML = `<p>${data.message || "Search failed"}</p>`;
+            return;
+        }
+
+        const notes = data.searchedNotes || [];
+
+        if (!notes.length) {
+            resultsDiv.innerHTML = `<p>No public notes found with that tag.</p>`;
+            return;
+        }
+
+        const grid = document.createElement('div');
+        grid.className = 'notes-grid';
+
+        notes.forEach(note => {
+            const card = document.createElement('div');
+            card.className = 'note-card';
+            card.innerHTML = `
+                <span class="note-status">${note.isPublic ? "Public" : "Private"}</span>
+                <div class="note-title">${note.name}</div>
+                <div class="note-content">${note.content}</div>
+                <div class="bottom-bar">
+                    ${note.tags && note.tags.length
+                        ? `<div class="note-tags">${note.tags.map(tag => `<span class="note-tag">${tag}</span>`).join('')}</div>`
+                        : `<div></div>`}
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+
+        resultsDiv.appendChild(grid);
+    } catch (err) {
+        resultsDiv.innerHTML = `<p>Error: ${err.message}</p>`;
+    }
+}
 
         function openEditModal(id, title, content, tags, isPublic) {
             currentEditId = id;
