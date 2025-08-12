@@ -1,3 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Register User</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: #f7f9fc;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+    }
+
+    .form-section {
+        background: white;
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: 0px 4px 20px rgba(0,0,0,0.08);
+        width: 100%;
+        max-width: 400px;
+    }
+
+    .form-section h2 {
+        text-align: center;
+        margin-bottom: 1.5rem;
+        color: #333;
+    }
+
+    form {
+        display: flex;
+        flex-direction: column;
+        gap: 0.9rem;
+    }
+
+    input {
+        padding: 0.8rem;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        font-size: 1rem;
+        outline: none;
+        transition: border-color 0.3s;
+    }
+
+    input:focus {
+        border-color: #4a90e2;
+    }
+
+    button {
+        background: #4a90e2;
+        color: white;
+        padding: 0.8rem;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: background 0.3s;
+    }
+
+    button:hover {
+        background: #3a7bc8;
+    }
+
+    pre {
+        background: #f1f1f1;
+        padding: 0.8rem;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        max-height: 200px;
+        overflow-y: auto;
+        margin-top: 1rem;
+    }
+
+    @media (max-width: 500px) {
+        .form-section {
+            padding: 1.5rem;
+            margin: 1rem;
+        }
+    }
+</style>
+</head>
+<body>
+
 <section id="registerUser" class="form-section">
     <h2>Register User</h2>
     <form id="registerForm">
@@ -10,45 +97,49 @@
 </section>
 
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const form = document.getElementById('registerForm');
-        const output = document.getElementById('registerOutput');
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('registerForm');
+    const output = document.getElementById('registerOutput');
 
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
 
-            output.textContent = 'Registering...';
+        output.textContent = 'Registering...';
 
-            const username = form.username.value.trim();
-            const email = form.email.value.trim();
-            const password = form.password.value;
+        const username = form.username.value.trim();
+        const email = form.email.value.trim();
+        const password = form.password.value;
 
-            try {
-                const response = await fetch('https://notesync-0m77.onrender.com/register', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        username,
-                        email,
-                        password,
-                        role: 'user' // default role
-                    }),
-                });
+        try {
+            const response = await fetch('https://notesync-0m77.onrender.com/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    username,
+                    email,
+                    password,
+                    role: 'user'
+                }),
+            });
 
-                if (!response.ok) {
-                    const text = await response.text();
-                    throw new Error(`Server returned ${response.status}: ${text}`);
-                }
-
-                const data = await response.json();
-                output.textContent = JSON.stringify(data, null, 2);
-                setTimeout(() => {
-                    window.location.href = '/login.html'; // change path if needed
-                }, 1000);
-                
-            } catch (error) {
-                output.textContent = `Error: ${error.message || error}`;
+            if (!response.ok) {
+                const text = await response.text();
+                throw new Error(`Server returned ${response.status}: ${text}`);
             }
-        });
+
+            const data = await response.json();
+            output.textContent = JSON.stringify(data, null, 2);
+
+            setTimeout(() => {
+                window.location.href = '/login.html';
+            }, 1000);
+
+        } catch (error) {
+            output.textContent = `Error: ${error.message || error}`;
+        }
     });
+});
 </script>
+
+</body>
+</html>
