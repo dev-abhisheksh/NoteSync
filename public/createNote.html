@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Note</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+        }
+
+        /* Navbar styling */
+        .navbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: #2c5b8a;
+            padding: 10px 20px;
+            flex-wrap: wrap;
+            height: 33px;
+        }
+
+        .navbar .brand {
+            font-weight: bold;
+            color: white;
+            font-size: 1.2rem;
+            text-decoration: none;
+        }
+
+        .navbar .buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .navbar .buttons a {
+            padding: 6px 14px;
+            border-radius: 5px;
+            color: white;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        .btn-green {
+            background-color: #28a745;
+        }
+
+        .btn-gray {
+            background-color: #6c757d;
+        }
+
+        .btn-blue {
+            background-color: #007bff;
+        }
+
+        .btn-green:hover {
+            background-color: #218838;
+        }
+
+        .btn-gray:hover {
+            background-color: #5a6268;
+        }
+
+        .btn-blue:hover {
+            background-color: #0069d9;
+        }
+
+        /* Form styling */
+        form {
+            max-width: 500px;
+            margin: 40px auto 10px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        form input,
+        form select {
+            width: 100%;
+            margin-bottom: 15px;
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            font-size: 1rem;
+        }
+
+        form input[type="submit"] {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        form input[type="submit"]:hover {
+            background-color: #218838;
+        }
+
+        /* Message styling */
+        #message {
+            text-align: center;
+            font-size: 1rem;
+            margin-top: 10px;
+            display: none;
+        }
+
+        #message.success {
+            color: green;
+        }
+
+        #message.error {
+            color: red;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar">
+        <a href="#" class="brand">NoteSync</a>
+        <div class="buttons">
+            <a href="/dashboard" class="btn-green">Dashboard</a>
+            <a href="/admin" class="btn-gray">Admin</a>
+            <a href="/login" class="btn-blue">Login</a>
+        </div>
+    </nav>
+
+    <!-- Form -->
+    <form id="form">
+        <input type="text" id="name" placeholder="Name">
+        <input type="text" id="content" placeholder="Content">
+        <input type="text" id="tags" placeholder="Tags">
+        <select id="isPublic">
+            <option value="public">Public</option>
+            <option value="private">Private</option>
+        </select>
+        <input type="submit" value="Create Note">
+    </form>
+
+    <!-- Message -->
+    <p id="message"></p>
+
+    <script>
+        const messageEl = document.getElementById('message');
+
+        function showMessage(text, type) {
+            messageEl.textContent = text;
+            messageEl.className = type; // 'success' or 'error'
+            messageEl.style.display = 'block';
+        }
+
+        document.querySelector('form').addEventListener('submit', async function (event) {
+            event.preventDefault();
+
+            const name = document.getElementById('name').value.trim();
+            const content = document.getElementById('content').value.trim();
+            const tags = document.getElementById('tags').value.trim().split(',').map(tag => tag.trim()).filter(tag => tag);
+            const isPublic = document.getElementById('isPublic').value === 'public';
+
+            if (!name || !content) {
+                showMessage("Name and Content are required!", "error");
+                return;
+            }
+
+            try {
+                const response = await fetch('/create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, content, tags, isPublic })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showMessage(data.message || 'Note created successfully', "success");
+                    setTimeout(() => {
+                        window.location.href = '/dashboard';
+                    }, 1500);
+                } else {
+                    showMessage(data.message || 'Failed to create note', "error");
+                }
+            } catch (error) {
+                showMessage('Error creating note: ' + error.message, "error");
+            }
+        });
+    </script>
+</body>
+
+</html>

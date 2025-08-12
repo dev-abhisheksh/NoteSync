@@ -1,62 +1,250 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Reset Password</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Reset Password</title>
+  <style>
+    /* Reset & sensible defaults */
+    *, *::before, *::after { box-sizing: border-box; }
+    html,body { height: 100%; margin: 0; }
+
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background: linear-gradient(135deg,#4facfe 0%, #00f2fe 100%);
+      color: #111827;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      overflow: auto; /* important: allow page to scroll when keyboard opens */
+    }
+
+    .card {
+      background: #fff;
+      width: 100%;
+      max-width: 420px;
+      border-radius: 12px;
+      padding: 28px;
+      box-shadow: 0 8px 30px rgba(2,6,23,0.12);
+      text-align: left;
+    }
+
+    .brand {
+      text-align: center;
+      font-weight: 700;
+      color: #0f172a;
+      font-size: 20px;
+      margin-bottom: 8px;
+    }
+
+    h1 {
+      margin: 0 0 18px 0;
+      font-size: 20px;
+      text-align: center;
+      color: #0b1220;
+    }
+
+    form { display:flex; flex-direction:column; gap:12px; }
+
+    label {
+      font-size: 13px;
+      color: #374151;
+      margin-bottom: 4px;
+      display:block;
+    }
+
+    input[type="password"] {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 8px;
+      border: 1px solid #e6e9ee;
+      font-size: 15px;
+      background: #fff;
+      transition: box-shadow .15s, border-color .15s;
+    }
+
+    input[type="password"]:focus {
+      outline: none;
+      border-color: #4facfe;
+      box-shadow: 0 4px 16px rgba(79,172,254,0.18);
+    }
+
+    .row {
+      display:flex;
+      gap:8px;
+    }
+
+    .btn {
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding: 12px 14px;
+      border-radius: 8px;
+      border: none;
+      font-weight: 600;
+      font-size: 15px;
+      cursor:pointer;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg,#4facfe,#00f2fe);
+      color: white;
+      width: 100%;
+    }
+
+    .btn-primary[disabled] {
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
+
+    .status {
+      margin-top: 10px;
+      min-height: 20px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    /* small helper text */
+    .help {
+      font-size: 13px;
+      color: #6b7280;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 520px) {
+      .card { padding: 20px; border-radius: 10px; }
+      h1 { font-size: 18px; }
+      .brand { font-size: 16px; }
+      input[type="password"] { padding: 12px; font-size: 15px; }
+      .btn { padding: 11px; font-size: 15px; border-radius: 8px; }
+    }
+
+    /* If the viewport is short (keyboard open), allow card to stay visible */
+    @media (max-height: 600px) {
+      body { align-items: flex-start; padding-top: 30px; padding-bottom: 30px; }
+    }
+  </style>
 </head>
 <body>
-    <h2>Reset Your Password</h2>
-    <form id="resetForm">
-        <input type="password" id="newPassword" placeholder="New Password" required>
-        <input type="password" id="confirmPassword" placeholder="Confirm Password" required>
-        <button type="submit">Reset Password</button>
+  <div class="card" role="main" aria-labelledby="title">
+    <div class="brand">NoteSync</div>
+    <h1 id="title">Reset your password</h1>
+
+    <form id="resetForm" autocomplete="off" novalidate>
+      <div>
+        <label for="newPassword">New password</label>
+        <input id="newPassword" name="newPassword" type="password" inputmode="text"
+               placeholder="At least 8 characters" minlength="8" required aria-required="true" />
+      </div>
+
+      <div>
+        <label for="confirmPassword">Confirm password</label>
+        <input id="confirmPassword" name="confirmPassword" type="password"
+               placeholder="Repeat new password" required aria-required="true" />
+      </div>
+
+      <button id="submitBtn" class="btn btn-primary" type="submit">Reset Password</button>
+
+      <div id="status" class="status" role="status" aria-live="polite"></div>
+      <div class="help" style="margin-top:6px; text-align:center;">
+        If the link was valid, your password will be updated and you'll be redirected to login.
+      </div>
     </form>
-    <p id="message"></p>
+  </div>
 
-    <script>
-        document.getElementById("resetForm").addEventListener("submit", async function(e) {
-            e.preventDefault();
+  <script>
+    (function () {
+      const form = document.getElementById('resetForm');
+      const newPw = document.getElementById('newPassword');
+      const confirmPw = document.getElementById('confirmPassword');
+      const status = document.getElementById('status');
+      const submitBtn = document.getElementById('submitBtn');
 
-            const newPassword = document.getElementById("newPassword").value;
-            const confirmPassword = document.getElementById("confirmPassword").value;
-            const messageEl = document.getElementById("message");
+      // Helper: safely get token from URL path (handles trailing slashes and querystrings)
+      function getTokenFromPath() {
+        const parts = window.location.pathname.split('/').filter(Boolean);
+        if (!parts.length) return null;
+        let last = parts[parts.length - 1] || null;
+        if (!last) return null;
+        // Remove query string if present
+        last = last.split('?')[0].split('#')[0];
+        return last || null;
+      }
 
-            if (newPassword !== confirmPassword) {
-                messageEl.style.color = "red";
-                messageEl.textContent = "Passwords do not match!";
-                return;
-            }
+      const token = getTokenFromPath();
+      if (!token) {
+        status.style.color = 'crimson';
+        status.textContent = 'Invalid or missing token in URL.';
+      }
 
-            // Extract token from URL path
-            const pathParts = window.location.pathname.split("/");
-            const token = pathParts[pathParts.length - 1];
+      form.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        status.textContent = '';
+        if (!token) return;
 
-            if (!token) {
-                messageEl.style.color = "red";
-                messageEl.textContent = "Invalid or missing token.";
-                return;
-            }
+        const a = newPw.value.trim();
+        const b = confirmPw.value.trim();
 
-            try {
-                const res = await fetch(`/reset-password/${token}`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ password: newPassword })
-                });
+        // Basic client-side validation
+        if (!a || !b) {
+          status.style.color = 'crimson';
+          status.textContent = 'Please fill both password fields.';
+          return;
+        }
+        if (a !== b) {
+          status.style.color = 'crimson';
+          status.textContent = 'Passwords do not match.';
+          return;
+        }
+        if (a.length < 8) {
+          status.style.color = 'crimson';
+          status.textContent = 'Password must be at least 8 characters.';
+          return;
+        }
 
-                const data = await res.json();
-                if (!res.ok) throw new Error(data.message || "Error resetting password");
+        // disable form while sending
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Processing...';
+        status.style.color = '#0f172a';
+        status.textContent = 'Submitting...';
 
-                messageEl.style.color = "green";
-                messageEl.textContent = data.message || "Password reset successfully!";
-                setTimeout(() => {
-                    window.location.href = "/login.html";
-                }, 2000);
-            } catch (err) {
-                messageEl.style.color = "red";
-                messageEl.textContent = err.message;
-            }
-        });
-    </script>
+        try {
+          // send to same-origin endpoint: POST /reset-password/:token
+          const res = await fetch(`/reset-password/${encodeURIComponent(token)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify({ password: a })
+          });
+
+          // attempt to parse JSON safely
+          let payload;
+          try { payload = await res.json(); } catch (err) { payload = {}; }
+
+          if (!res.ok) {
+            const msg = payload?.message || `Server error (${res.status})`;
+            throw new Error(msg);
+          }
+
+          status.style.color = 'green';
+          status.textContent = payload?.message || 'Password reset successfully. Redirecting to login...';
+
+          // short delay then redirect to login
+          setTimeout(() => location.assign('/login.html'), 1600);
+
+        } catch (err) {
+          status.style.color = 'crimson';
+          status.textContent = err.message || 'Request failed.';
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Reset Password';
+        }
+      });
+    })();
+  </script>
 </body>
 </html>

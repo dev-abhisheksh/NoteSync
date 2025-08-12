@@ -5,108 +5,188 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>User Admin Dashboard</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            padding: 20px;
-            background: #f3f4f6;
-            color: #333;
+   <style>
+    body {
+        font-family: Arial, sans-serif;
+        background: #f3f4f6;
+        color: #333;
+        margin: 0;
+    }
+
+    h1 {
+        text-align: center;
+        margin-bottom: 1rem;
+        color: #2563eb;
+    }
+
+    .navbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background-color: #2c5b8a;
+        padding: 10px 20px;
+        flex-wrap: wrap;
+    }
+
+    .navbar .brand {
+        font-weight: bold;
+        color: white;
+        font-size: 1.2rem;
+        text-decoration: none;
+    }
+
+    .navbar .buttons {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .navbar .buttons a {
+        padding: 6px 14px;
+        border-radius: 5px;
+        color: white;
+        text-decoration: none;
+        font-size: 0.9rem;
+    }
+
+    .btn-green { background-color: #28a745; }
+    .btn-gray { background-color: #6c757d; }
+    .btn-blue { background-color: #007bff; }
+    .btn-green:hover { background-color: #218838; }
+    .btn-gray:hover { background-color: #5a6268; }
+    .btn-blue:hover { background-color: #0069d9; }
+
+    .tabs {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin-bottom: 20px;
+        cursor: pointer;
+    }
+
+    .tab {
+        padding: 10px 20px;
+        background: #e0e7ff;
+        margin: 5px;
+        border-radius: 8px;
+        font-weight: bold;
+        color: #4f46e5;
+        text-align: center;
+        flex: 1 1 auto;
+        min-width: 120px;
+    }
+
+    .tab.active {
+        background: #4f46e5;
+        color: white;
+    }
+
+    .form-container {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        max-width: 480px;
+        margin: 0 auto;
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.15);
+    }
+
+    form {
+        display: flex;
+        flex-direction: column;
+    }
+
+    label {
+        margin-top: 15px;
+        font-weight: 600;
+    }
+
+    input, select, button {
+        margin-top: 6px;
+        padding: 10px;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        font-size: 1rem;
+    }
+
+    button {
+        background: #4f46e5;
+        color: white;
+        border: none;
+        margin-top: 20px;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+    button:hover { background: #3730a3; }
+
+    pre {
+        background: #f1f5f9;
+        padding: 12px;
+        border-radius: 6px;
+        margin-top: 12px;
+        max-height: 200px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+
+    .form-section { display: none; }
+    .form-section.active { display: block; }
+
+    /* Responsive Styling */
+    @media (max-width: 768px) {
+        .navbar {
+            flex-direction: column;
+            align-items: flex-start;
         }
 
-        h1 {
-            text-align: center;
-            margin-bottom: 1rem;
-            color: #2563eb;
-        }
-
-        .tabs {
-            display: flex;
-            justify-content: center;
-            margin-bottom: 20px;
-            cursor: pointer;
+        .navbar .buttons {
+            width: 100%;
+            justify-content: flex-start;
         }
 
         .tab {
-            padding: 10px 20px;
-            background: #e0e7ff;
-            margin: 0 5px;
-            border-radius: 8px 8px 0 0;
-            font-weight: bold;
-            color: #4f46e5;
-        }
-
-        .tab.active {
-            background: #4f46e5;
-            color: white;
-            cursor: default;
+            flex: 1 1 100%;
+            text-align: center;
         }
 
         .form-container {
-            background: white;
-            border-radius: 8px;
-            padding: 20px;
-            max-width: 480px;
-            margin: 0 auto;
-            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.15);
+            width: 95%;
         }
+    }
 
-        form {
-            display: flex;
-            flex-direction: column;
-        }
-
-        label {
-            margin-top: 15px;
-            font-weight: 600;
-        }
-
-        input,
-        select,
-        button {
-            margin-top: 6px;
+    @media (max-width: 480px) {
+        .navbar {
             padding: 10px;
-            border: 1px solid #cbd5e1;
-            border-radius: 6px;
+        }
+
+        .navbar .brand {
             font-size: 1rem;
         }
 
-        button {
-            background: #4f46e5;
-            color: white;
-            border: none;
-            margin-top: 20px;
-            cursor: pointer;
-            transition: background 0.2s;
+        .navbar .buttons a {
+            font-size: 0.8rem;
+            padding: 5px 10px;
         }
 
-        button:hover {
-            background: #3730a3;
+        h1 {
+            font-size: 1.5rem;
         }
+    }
+</style>
 
-        pre {
-            background: #f1f5f9;
-            padding: 12px;
-            border-radius: 6px;
-            margin-top: 12px;
-            max-height: 200px;
-            overflow-y: auto;
-            white-space: pre-wrap;
-            word-break: break-word;
-        }
-
-        /* Hide all forms by default */
-        .form-section {
-            display: none;
-        }
-
-        /* Show active form */
-        .form-section.active {
-            display: block;
-        }
-    </style>
 </head>
 
 <body>
+
+    <nav class="navbar">
+        <a href="#" class="brand">NoteSync</a>
+        <div class="buttons">
+            <a href="/dashboard" class="btn-green">Dashboard</a>
+            <a href="/admin" class="btn-gray">Admin</a>
+            <a href="/login" class="btn-blue">Login</a>
+        </div>
+    </nav>
 
     <h1 style="text-align:center;">
         <a href="/dashboard.html"
