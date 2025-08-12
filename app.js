@@ -56,4 +56,13 @@ app.get("/update-note", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "updateNote.html"));
 });
 
+app.get("/forgot-password", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "forgotPass.html"));
+});
+
+app.get("/reset-password/:token", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "resetPass.html"));
+})
+
+
 export { app }

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Reset Password</title>
+</head>
+<body>
+    <h2>Reset Your Password</h2>
+    <form id="resetForm">
+        <input type="password" id="newPassword" placeholder="New Password" required>
+        <input type="password" id="confirmPassword" placeholder="Confirm Password" required>
+        <button type="submit">Reset Password</button>
+    </form>
+    <p id="message"></p>
+
+    <script>
+        document.getElementById("resetForm").addEventListener("submit", async function(e) {
+            e.preventDefault();
+
+            const newPassword = document.getElementById("newPassword").value;
+            const confirmPassword = document.getElementById("confirmPassword").value;
+            const messageEl = document.getElementById("message");
+
+            if (newPassword !== confirmPassword) {
+                messageEl.style.color = "red";
+                messageEl.textContent = "Passwords do not match!";
+                return;
+            }
+
+            // Extract token from URL path
+            const pathParts = window.location.pathname.split("/");
+            const token = pathParts[pathParts.length - 1];
+
+            if (!token) {
+                messageEl.style.color = "red";
+                messageEl.textContent = "Invalid or missing token.";
+                return;
+            }
+
+            try {
+                const res = await fetch(`/reset-password/${token}`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ password: newPassword })
+                });
+
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || "Error resetting password");
+
+                messageEl.style.color = "green";
+                messageEl.textContent = data.message || "Password reset successfully!";
+                setTimeout(() => {
+                    window.location.href = "/login.html";
+                }, 2000);
+            } catch (err) {
+                messageEl.style.color = "red";
+                messageEl.textContent = err.message;
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Forgot Password</title>
+</head>
+<body>
+  <h2>Forgot Password</h2>
+  <form id="forgotForm">
+    <input type="email" id="email" placeholder="Enter your email" required />
+    <button type="submit">Send Reset Link</button>
+  </form>
+  <p id="message"></p>
+
+  <script>
+    document.getElementById("forgotForm").addEventListener("submit", async function(e) {
+      e.preventDefault();
+
+      const email = document.getElementById("email").value;
+      const messageEl = document.getElementById("message");
+
+      try {
+        const res = await fetch("http://localhost:5000/forgot-password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || "Error sending reset email");
+
+        messageEl.style.color = "green";
+        messageEl.textContent = data.message || "Password reset link sent!";
+      } catch (err) {
+        messageEl.style.color = "red";
+        messageEl.textContent = err.message;
+      }
+    });
+  </script>
+</body>
+</html>

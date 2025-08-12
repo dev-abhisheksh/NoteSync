@@ -1,7 +1,7 @@
 import { Users } from "../models/user.model.js";
 import { Note } from "../models/note.model.js"; // adjust path as needed
 import mongoose from "mongoose";
-import bcryptjs from "bcryptjs"
+import bcrypt from "bcryptjs"
 import jwt from "jsonwebtoken"
 import dotenv from "dotenv"
 dotenv.config()
@@ -243,38 +243,48 @@ const forgotPassword = async (req, res) => {
 
 
 const resetPassword = async (req, res) => {
-    const { token } = req.params;
-    const { password } = req.body;
+    try {
+        const { token } = req.params; // token from /reset-password/:token
+        const { password } = req.body; // from frontend form
 
-    if (!password) {
-        return res.status(400).json({ message: "Password is required" });
+        // 1️⃣ Validate new password
+        if (!password || password.trim().length < 6) {
+            return res
+                .status(400)
+                .json({ message: "Password must be at least 6 characters long" });
+        }
+
+        // 2️⃣ Hash token from URL for DB lookup
+        const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
+        // 3️⃣ Find user with valid token that hasn't expired
+        const user = await Users.findOne({
+            resetPasswordToken: hashedToken,
+            resetPasswordExpire: { $gt: Date.now() }
+        });
+
+        if (!user) {
+            return res.status(400).json({ message: "Token is invalid or has expired" });
+        }
+
+        // 4️⃣ Hash the new password
+        user.password = password;  // raw password
+        await user.save();
+
+        // 5️⃣ Clear reset token fields
+        user.resetPasswordToken = undefined;
+        user.resetPasswordExpire = undefined;
+
+        // 6️⃣ Save once
+        await user.save();
+
+        console.log("Password reset for:", user.email);
+
+        res.status(200).json({ success: true, message: "Password reset successfully" });
+    } catch (error) {
+        console.error("Error in password reset:", error);
+        res.status(500).json({ message: "Server error" });
     }
-
-    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
-
-    const user = await Users.findOne({
-        resetPasswordToken: hashedToken,
-        resetPasswordExpire: { $gt: Date.now() }  // ✅ Fixed: Changed from resetPasswordExpiry to resetPasswordExpire
-    });
-
-    if (!user) {
-        return res.status(400).json({ message: "Token is invalid or has expired" });
-    }
-
-    user.password = password;
-    user.resetPasswordToken = undefined;
-    user.resetPasswordExpire = undefined;  // ✅ Fixed: Changed from resetPasswordExpiry to resetPasswordExpire
-
-    await user.save();
-    const savedUser = await Users.findById(user._id);
-    console.log("Saved user after password reset token set:", savedUser);
-    console.log("Token from URL:", token);
-    console.log("Hashed token from URL:", hashedToken);
-
-    res.status(200).json({
-        success: true,
-        message: "Password reset successfully"
-    });
 };
 
 // controllers/notesController.js
