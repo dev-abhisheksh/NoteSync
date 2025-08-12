@@ -1,22 +1,174 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f6f8;
+    }
+
+    /* Navbar */
+    .navbar {
+      background-color: #2e5b8a; /* same blue as your screenshot */
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 20px;
+      height: 50px; /* match screenshot height */
+    }
+
+    .navbar .brand {
+      font-weight: bold;
+      font-size: 1.2rem;
+      color: white;
+    }
+
+    .navbar-buttons button {
+      padding: 6px 16px;
+      margin-left: 5px;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .btn-green {
+      background-color: #28a745; /* green */
+      color: white;
+    }
+
+    .btn-green:hover {
+      background-color: #218838;
+    }
+
+    .btn-gray {
+      background-color: #6c757d; /* gray */
+      color: white;
+    }
+
+    .btn-gray:hover {
+      background-color: #5a6268;
+    }
+
+    .btn-blue {
+      background-color: #007bff; /* blue */
+      color: white;
+    }
+
+    .btn-blue:hover {
+      background-color: #0069d9;
+    }
+
+    /* Login container */
+    .container {
+      max-width: 400px;
+      background: white;
+      padding: 25px;
+      margin: 50px auto;
+      border-radius: 10px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      text-align: center;
+      color: #2e5b8a;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+    }
+
+    input {
+      padding: 12px;
+      margin: 8px 0;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 1rem;
+    }
+
+    button.form-btn {
+      padding: 10px;
+      margin: 6px 0;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    /* Matching form buttons to navbar colors */
+    .form-btn-green {
+      background-color: #28a745;
+      color: white;
+    }
+    .form-btn-green:hover {
+      background-color: #218838;
+    }
+
+    .form-btn-gray {
+      background-color: #6c757d;
+      color: white;
+    }
+    .form-btn-gray:hover {
+      background-color: #5a6268;
+    }
+
+    .form-btn-blue {
+      background-color: #007bff;
+      color: white;
+    }
+    .form-btn-blue:hover {
+      background-color: #0069d9;
+    }
+
+    p#message {
+      text-align: center;
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 500px) {
+      .container {
+        margin: 20px;
+        padding: 20px;
+      }
+    }
+  </style>
 </head>
 <body>
-  <h2>Login</h2>
-  <form id="loginForm">
-    <input type="email" id="email" placeholder="Email" required><br><br>
-    <input type="password" id="password" placeholder="Password" required><br><br>
-    <button type="submit">Login</button>
-  </form>
 
-  <p id="message" style="color: red;"></p>
-  
-  <button onclick="window.location.href='/register.html'">Doesn't have an account!</button>
-  <button onclick="window.location.href='/admin.html'">U an admin?!!!</button>
+  <!-- Navbar -->
+  <div class="navbar">
+    <div class="brand">NoteSync</div>
+    <div class="navbar-buttons">
+      <button class="btn-green" onclick="window.location.href='/create.html'">Create</button>
+      <button class="btn-gray" onclick="window.location.href='/admin.html'">Admin</button>
+      <button class="btn-blue" onclick="window.location.href='/login.html'">Login</button>
+    </div>
+  </div>
 
+  <!-- Login Form -->
+  <div class="container">
+    <h2>Login</h2>
+    <form id="loginForm">
+      <input type="email" id="email" placeholder="Email" required>
+      <input type="password" id="password" placeholder="Password" required>
+      <button type="submit" class="form-btn form-btn-blue">Login</button>
+    </form>
+
+    <p id="message" style="color: red;"></p>
+
+    <!-- Extra Buttons -->
+    <button class="form-btn form-btn-green" onclick="window.location.href='/register.html'">Doesn't have an account?</button>
+    <button class="form-btn form-btn-gray" onclick="window.location.href='/forgot-password.html'">Forgot Password</button>
+    <button class="form-btn form-btn-gray" onclick="window.location.href='/update-password.html'">Update Your Password</button>
+  </div>
 
   <script>
     document.getElementById("loginForm").addEventListener("submit", async function(e) {
@@ -30,7 +182,7 @@
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, password }),
-          credentials: "include" // ✅ important for cookies
+          credentials: "include" // ✅ for cookies
         });
 
         if (!res.ok) throw new Error("Invalid credentials");
@@ -48,5 +200,6 @@
       }
     });
   </script>
+
 </body>
 </html>

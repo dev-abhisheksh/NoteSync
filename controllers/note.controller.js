@@ -139,18 +139,19 @@ const deleteNote = async (req, res) => {
 // };
 const searchNotesByTag = async (req, res) => {
     try {
-        let { tags } = req.body; // could be a string or array
-
+        let { tags } = req.body; // Since your route is POST
+        
         // Ensure it's always an array
         if (!Array.isArray(tags)) {
             tags = [tags];
         }
-
+        
+        // Populate the owner field to get username
         const searchedNotes = await Note.find({
             tags: { $in: tags },
             isPublic: true
-        });
-
+        }).populate('owner', 'username'); // Populate owner field with username only
+        
         return res.status(200).json({
             message: searchedNotes.length
                 ? "Successfully fetched public notes based on tags"
