@@ -9,6 +9,6 @@ router.get("/get-notes", verifyJWT, getAllNotes)
 router.get("/get-user-notes", verifyJWT, getSingleUserNotes)
 router.post("/edit-note", verifyJWT, editNote)
 router.delete("/delete-note/:id", verifyJWT, deleteNote); 
-router.post("/seach", verifyJWT, searchNotesByTag)
+router.post("/search", searchNotesByTag)
 
 export default router;

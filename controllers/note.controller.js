@@ -110,20 +110,36 @@ const deleteNote = async (req, res) => {
 
 
 //search
-
 const searchNotesByTag = async (req, res) => {
-    const { tags } = req.body;
-    if (!tags) {
-        return res.status(400).json({ message: "Couldnt find tag" })
-    }
+    try {
+        const { tags } = req.body;
 
-    const searchedNotes = await Note.find({ tags: tags })
-    if (!searchedNotes) {
-        return res.status(400).json({ message: "Couldnt find any note" })
-    }
+        if (!tags || !Array.isArray(tags) || tags.length === 0) {
+            return res.status(400).json({ message: "Tags array is required" });
+        }
 
-    return res.status(200).json({ message: "successfully fetched notes based on tage", searchedNotes })
-}
+        const searchedNotes = await Note.find({
+            tags: { $in: tags },
+            isPublic: true // ✅ Only fetch public notes
+        });
+
+        if (!searchedNotes || searchedNotes.length === 0) {
+            return res.status(404).json({ message: "No public notes found for given tags" });
+        }
+
+        return res.status(200).json({
+            message: "Successfully fetched public notes based on tags",
+            searchedNotes
+        });
+
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: "Server error while searching notes" });
+    }
+};
+
+
+
 
 export {
     createNote,
