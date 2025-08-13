@@ -181,28 +181,67 @@ const updatePassword = async (req, res) => {
     try {
         const { oldPassword, newPassword } = req.body;
 
-        const user = await Users.findById(req.user?._id)
+        // Validation
+        if (!oldPassword || !newPassword) {
+            return res.status(400).json({
+                success: false,
+                message: "Both old and new passwords are required"
+            });
+        }
+
+        if (newPassword.length < 6) {
+            return res.status(400).json({
+                success: false,
+                message: "New password must be at least 6 characters long"
+            });
+        }
+
+        // Find user
+        const user = await Users.findById(req.user?._id);
 
         if (!user) {
-            throw new Error("User not found")
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
         }
 
-        const isPasswordCorrect = await user.isPasswordCorrect(oldPassword)
+        // Check if old password is correct
+        const isPasswordCorrect = await user.isPasswordCorrect(oldPassword);
 
         if (!isPasswordCorrect) {
-            throw new Error("Invalid old password")
+            return res.status(400).json({
+                success: false,
+                message: "Current password is incorrect"
+            });
         }
+
+        // Check if new password is same as old password
+        const isSamePassword = await user.isPasswordCorrect(newPassword);
+        if (isSamePassword) {
+            return res.status(400).json({
+                success: false,
+                message: "New password must be different from current password"
+            });
+        }
+
+        // Update password
         user.password = newPassword;
-        await user.save({ validateBeforeSave: false })
+        await user.save({ validateBeforeSave: false });
 
         return res.status(200).json({
             success: true,
-            message: "Password updated successfully",
+            message: "Password updated successfully"
         });
+
     } catch (error) {
-        return res.status(500).json({ message: "Failed to update password" })
+        console.error("Error updating password:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error. Please try again."
+        });
     }
-}
+};
 
 // you'll need to create this
 

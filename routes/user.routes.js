@@ -15,8 +15,7 @@ router.post("/logout", verifyJWT, logOutUser);
 router.get("/me", verifyJWT, getProfile)
 router.patch("/update-user", verifyJWT, updateProfile)
 router.patch("/update-password", verifyJWT, updatePassword)
-router.put("/update-note/:id", verifyJWT, updateNote); // Assuming updateNote is a function to update notes
-
+router.put("/update-note/:id", verifyJWT, updateNote); 
 
 
 export default router;
