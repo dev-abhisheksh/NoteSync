@@ -224,7 +224,7 @@ const forgotPassword = async (req, res) => {
     const savedUser = await Users.findById(user._id);
     console.log("Saved user after password reset token set:", savedUser);
 
-    const resetUrl = `http://localhost:5000/reset-password/${resetToken}`; // frontend URL
+    const resetUrl = `/reset-password/${resetToken}`; // frontend URL
     const message = `Reset your password using the link: ${resetUrl}`;
 
     try {
