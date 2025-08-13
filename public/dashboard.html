@@ -161,7 +161,8 @@
             position: relative;
             transition: box-shadow 0.17s, transform 0.17s;
             min-height: 180px;
-            max-height: none;
+            max-height: 300px;
+            overflow: hidden;
         }
 
         .note-card:hover {
@@ -185,6 +186,9 @@
             overflow-wrap: break-word;
             line-height: 1.4;
              white-space: pre-wrap; 
+            max-height: 250px;
+            overflow-y: auto;
+            border-radius: 7px;
         }
 
         .note-author {
@@ -439,6 +443,18 @@
             color: #666;
             font-style: italic;
         }
+
+        /* Search results section styling */
+        .search-results-section {
+            border-top: 2px solid #e2e8f0;
+            margin-top: 2rem;
+            padding-top: 1rem;
+        }
+
+        .search-results-section h2 {
+            margin-bottom: 1rem;
+            color: #4a5568;
+        }
     </style>
 </head>
 
@@ -447,7 +463,7 @@
         <div class="navbar-left">
             <div class="navbar-brand">NoteSync</div>
             <div class="navbar-search">
-                <input type="text" id="searchInput" placeholder="Search by tag..." onkeyup="searchNotes()">
+                <input type="text" id="searchInput" placeholder="Search by tag..." onkeyup="debounceSearch(this.value)">
             </div>
         </div>
         
@@ -462,15 +478,17 @@
         </div>
         
         <div class="mobile-search-bar" id="mobileSearchBar">
-            <input type="text" id="mobileSearchInput" placeholder="Search by tag..." onkeyup="mobileSearch()">
+            <input type="text" id="mobileSearchInput" placeholder="Search by tag..." onkeyup="debounceSearch(this.value, true)">
         </div>
     </div>
 
     <h1 id="Username">Fetch My Notes</h1>
     <div id="output"></div>
 
-    <h2>Search Results</h2>
-    <div id="searchResults"></div>
+    <div id="searchResultsSection" class="search-results-section" style="display: none;">
+        <h2>Search Results</h2>
+        <div id="searchResults"></div>
+    </div>
 
     <!-- Edit Modal -->
     <div id="editModal" class="modal">
@@ -490,7 +508,18 @@
     <script>
         let currentEditId = null;
         let mobileSearchActive = false;
-        let notesData = []; // Store all notes data
+        let notesData = [];
+        let searchTimeout = null;
+        let currentSearchQuery = '';
+        let isSearching = false;
+
+        // Debounce search to prevent rapid API calls
+        function debounceSearch(query, isMobile = false) {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                performSearch(query.trim());
+            }, 300);
+        }
 
         function toggleMobileSearch() {
             const mobileSearchBar = document.getElementById('mobileSearchBar');
@@ -504,75 +533,107 @@
             } else {
                 mobileSearchBar.classList.remove('active');
                 mobileSearchInput.value = '';
-                document.getElementById('searchResults').innerHTML = '';
+                clearSearchResults();
             }
         }
 
-        function mobileSearch() {
-            const query = document.getElementById('mobileSearchInput').value.trim();
-            performSearch(query);
-        }
-
-        function searchNotes() {
-            const query = document.getElementById('searchInput').value.trim();
-            performSearch(query);
-        }
-
-        function performSearch(query) {
+        function clearSearchResults() {
+            const searchSection = document.getElementById('searchResultsSection');
             const resultsDiv = document.getElementById('searchResults');
-            
-            if (!query) {
-                resultsDiv.innerHTML = '';
+            searchSection.style.display = 'none';
+            resultsDiv.innerHTML = '';
+            currentSearchQuery = '';
+        }
+
+        async function performSearch(query) {
+            // Prevent duplicate searches
+            if (query === currentSearchQuery || isSearching) {
                 return;
             }
 
-            fetch("/search", {
-                method: "POST",
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                credentials: "include",
-                body: JSON.stringify({
-                    tags: query
-                })
-            })
-            .then(res => res.json())
-            .then(data => {
+            const searchSection = document.getElementById('searchResultsSection');
+            const resultsDiv = document.getElementById('searchResults');
+            
+            // Clear previous results first
+            resultsDiv.innerHTML = '';
+            
+            if (!query) {
+                clearSearchResults();
+                return;
+            }
+
+            currentSearchQuery = query;
+            isSearching = true;
+
+            // Show loading state
+            searchSection.style.display = 'block';
+            resultsDiv.innerHTML = '<div class="loading">Searching...</div>';
+
+            try {
+                const response = await fetch("/search", {
+                    method: "POST",
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: "include",
+                    body: JSON.stringify({
+                        tags: query
+                    })
+                });
+
+                const data = await response.json();
+
+                // Clear loading state
+                resultsDiv.innerHTML = '';
+
+                if (!response.ok) {
+                    throw new Error(data.message || `HTTP error! Status: ${response.status}`);
+                }
+
                 if (!data.searchedNotes || !data.searchedNotes.length) {
                     resultsDiv.innerHTML = '<div class="no-results">No public notes found with that tag.</div>';
                     return;
                 }
 
-                const grid = document.createElement('div');
-                grid.className = 'notes-grid';
+                displaySearchResults(data.searchedNotes);
 
-                data.searchedNotes.forEach(note => {
-                    const card = document.createElement('div');
-                    card.className = 'note-card';
-                    card.innerHTML = `
-                        <span class="note-status">${note.isPublic ? "Public" : "Private"}</span>
-                        <div class="note-title">${escapeHtml(note.name)}</div>
-                        <div class="note-content">${escapeHtml(note.content)}</div>
-                        <div class="note-author">
-                            By: ${escapeHtml(note.owner?.username || 'Unknown User')}
-                        </div>
-                        <div class="bottom-bar">
-                            <div class="note-tags">
-                                ${note.tags && note.tags.length
-                                    ? note.tags.map(tag => `<span class="note-tag" title="${escapeHtml(tag)}">${escapeHtml(tag)}</span>`).join('')
-                                    : ''}
-                            </div>
-                        </div>
-                    `;
-                    grid.appendChild(card);
-                });
+            } catch (err) {
+                console.error('Search error:', err);
+                resultsDiv.innerHTML = `<div class="no-results">Search error: ${escapeHtml(err.message)}</div>`;
+            } finally {
+                isSearching = false;
+            }
+        }
 
-                resultsDiv.appendChild(grid);
-                
-            })
-            .catch(err => {
-                resultsDiv.innerHTML = `<div class="no-results">Error: ${err.message}</div>`;
+        function displaySearchResults(notes) {
+            const resultsDiv = document.getElementById('searchResults');
+            
+            // Create fresh grid for search results
+            const grid = document.createElement('div');
+            grid.className = 'notes-grid';
+
+            notes.forEach(note => {
+                const card = document.createElement('div');
+                card.className = 'note-card';
+                card.innerHTML = `
+                    <span class="note-status">${note.isPublic ? "Public" : "Private"}</span>
+                    <div class="note-title">${escapeHtml(note.name || 'Untitled')}</div>
+                    <div class="note-content">${escapeHtml(note.content || '')}</div>
+                    <div class="note-author">
+                        By: ${escapeHtml(note.owner?.username || 'Unknown User')}
+                    </div>
+                    <div class="bottom-bar">
+                        <div class="note-tags">
+                            ${note.tags && note.tags.length
+                                ? note.tags.map(tag => `<span class="note-tag" title="${escapeHtml(tag)}">${escapeHtml(tag)}</span>`).join('')
+                                : ''}
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
             });
+
+            resultsDiv.appendChild(grid);
         }
 
         // Helper function to escape HTML characters
@@ -587,6 +648,8 @@
             const outputDiv = document.getElementById('output');
 
             try {
+                outputDiv.innerHTML = '<div class="loading">Loading your notes...</div>';
+
                 const response = await fetch('/get-user-notes', {
                     method: 'GET',
                     credentials: 'include'
@@ -596,7 +659,10 @@
 
                 const data = await response.json();
                 const notes = data.notes || [];
-                notesData = notes; // Store notes data globally
+                notesData = notes;
+
+                // Clear loading state
+                outputDiv.innerHTML = '';
 
                 if (!notes.length) {
                     outputDiv.innerHTML = '<div class="no-results">No notes found!</div>';
@@ -604,54 +670,60 @@
                 }
 
                 document.getElementById("Username").innerText = `${data.username || "User"}'s Notes`;
-                const grid = document.createElement('div');
-                grid.className = 'notes-grid';
-
-                notes.forEach((note, index) => {
-                    const card = document.createElement('div');
-                    card.className = 'note-card';
-
-                    card.innerHTML = `
-                        <span class="note-status">${note.isPublic ? "Public" : "Private"}</span>
-                        <div class="note-title">${escapeHtml(note.name || "Untitled")}</div>
-                        <div class="note-content">${escapeHtml(note.content || "")}</div>
-                        <div class="bottom-bar">
-                            <div class="note-tags">
-                                ${note.tags && note.tags.length
-                                    ? note.tags.map(tag => `<span class="note-tag" title="${escapeHtml(tag)}">${escapeHtml(tag)}</span>`).join('')
-                                    : ''}
-                            </div>
-                            <div class="note-actions">
-                                <button class="edit-btn" data-note-index="${index}">Edit</button>
-                                <button class="delete-btn" data-note-id="${note._id}">Delete</button>
-                            </div>
-                        </div>
-                    `;
-
-                    grid.appendChild(card);
-                });
-
-                // Add event listeners after creating the cards
-                grid.addEventListener('click', function(e) {
-                    if (e.target.classList.contains('edit-btn')) {
-                        const noteIndex = parseInt(e.target.dataset.noteIndex);
-                        const note = notesData[noteIndex];
-                        if (note) {
-                            openEditModal(note);
-                        }
-                    }
-                    
-                    if (e.target.classList.contains('delete-btn')) {
-                        const noteId = e.target.dataset.noteId;
-                        deleteNote(noteId);
-                    }
-                });
-
-                outputDiv.innerHTML = '';
-                outputDiv.appendChild(grid);
+                
+                displayUserNotes(notes);
 
             } catch (err) {
-                outputDiv.innerHTML = `<div class="no-results">Error fetching notes: ${err.message}</div>`;
+                console.error('Fetch notes error:', err);
+                outputDiv.innerHTML = `<div class="no-results">Error fetching notes: ${escapeHtml(err.message)}</div>`;
+            }
+        }
+
+        function displayUserNotes(notes) {
+            const outputDiv = document.getElementById('output');
+            const grid = document.createElement('div');
+            grid.className = 'notes-grid';
+
+            notes.forEach((note, index) => {
+                const card = document.createElement('div');
+                card.className = 'note-card';
+
+                card.innerHTML = `
+                    <span class="note-status">${note.isPublic ? "Public" : "Private"}</span>
+                    <div class="note-title">${escapeHtml(note.name || "Untitled")}</div>
+                    <div class="note-content">${escapeHtml(note.content || "")}</div>
+                    <div class="bottom-bar">
+                        <div class="note-tags">
+                            ${note.tags && note.tags.length
+                                ? note.tags.map(tag => `<span class="note-tag" title="${escapeHtml(tag)}">${escapeHtml(tag)}</span>`).join('')
+                                : ''}
+                        </div>
+                        <div class="note-actions">
+                            <button class="edit-btn" data-note-index="${index}">Edit</button>
+                            <button class="delete-btn" data-note-id="${note._id}">Delete</button>
+                        </div>
+                    </div>
+                `;
+
+                grid.appendChild(card);
+            });
+
+            // Add single event listener to the grid (event delegation)
+            grid.addEventListener('click', handleNoteAction);
+
+            outputDiv.appendChild(grid);
+        }
+
+        function handleNoteAction(e) {
+            if (e.target.classList.contains('edit-btn')) {
+                const noteIndex = parseInt(e.target.dataset.noteIndex);
+                const note = notesData[noteIndex];
+                if (note) {
+                    openEditModal(note);
+                }
+            } else if (e.target.classList.contains('delete-btn')) {
+                const noteId = e.target.dataset.noteId;
+                deleteNote(noteId);
             }
         }
 
@@ -660,12 +732,13 @@
             document.getElementById('editTitle').value = note.name || '';
             document.getElementById('editContent').value = note.content || '';
             document.getElementById('editTags').value = note.tags ? note.tags.join(', ') : '';
-            document.getElementById('editPublic').checked = note.isPublic;
+            document.getElementById('editPublic').checked = note.isPublic || false;
             document.getElementById('editModal').style.display = 'flex';
         }
 
         function closeModal() {
             document.getElementById('editModal').style.display = 'none';
+            currentEditId = null;
         }
 
         async function deleteNote(noteId) {
@@ -677,22 +750,36 @@
                     credentials: 'include'
                 });
 
-                if (!res.ok) throw new Error("Failed to delete note");
+                if (!res.ok) {
+                    const errorData = await res.json();
+                    throw new Error(errorData.message || "Failed to delete note");
+                }
 
-                fetchNotes();
+                // Refresh notes after successful deletion
+                await fetchNotes();
 
             } catch (err) {
-                alert(err.message);
+                console.error('Delete error:', err);
+                alert(`Error deleting note: ${err.message}`);
             }
         }
 
+        // Initialize save edit functionality
         document.getElementById('saveEditBtn').addEventListener('click', async (event) => {
             event.preventDefault();
 
+            if (!currentEditId) {
+                alert('No note selected for editing');
+                return;
+            }
+
             const updatedNote = {
-                name: document.getElementById('editTitle').value,
-                content: document.getElementById('editContent').value,
-                tags: document.getElementById('editTags').value.split(',').map(t => t.trim()).filter(t => t),
+                name: document.getElementById('editTitle').value.trim(),
+                content: document.getElementById('editContent').value.trim(),
+                tags: document.getElementById('editTags').value
+                    .split(',')
+                    .map(t => t.trim())
+                    .filter(t => t),
                 isPublic: document.getElementById('editPublic').checked
             };
 
@@ -704,34 +791,48 @@
                     body: JSON.stringify(updatedNote)
                 });
 
-                if (!res.ok) throw new Error("Failed to update note");
+                if (!res.ok) {
+                    const errorData = await res.json();
+                    throw new Error(errorData.message || "Failed to update note");
+                }
 
                 closeModal();
-                fetchNotes();
+                await fetchNotes();
 
             } catch (err) {
-                alert(err.message);
+                console.error('Update error:', err);
+                alert(`Error updating note: ${err.message}`);
             }
         });
 
-        // Clear search results when search input is empty
-        document.getElementById('searchInput').addEventListener('input', function() {
-            if (!this.value.trim()) {
-                document.getElementById('searchResults').innerHTML = '';
-            }
-        });
+        // Clear search results when input is cleared
+        function setupSearchInputListeners() {
+            const searchInput = document.getElementById('searchInput');
+            const mobileSearchInput = document.getElementById('mobileSearchInput');
+
+            searchInput.addEventListener('input', function() {
+                if (!this.value.trim()) {
+                    clearSearchResults();
+                }
+            });
+
+            mobileSearchInput.addEventListener('input', function() {
+                if (!this.value.trim()) {
+                    clearSearchResults();
+                }
+            });
+        }
 
         // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
             fetchNotes();
-            
-            const mobileSearchInput = document.getElementById('mobileSearchInput');
-            if (mobileSearchInput) {
-                mobileSearchInput.addEventListener('input', function() {
-                    if (!this.value.trim()) {
-                        document.getElementById('searchResults').innerHTML = '';
-                    }
-                });
+            setupSearchInputListeners();
+        });
+
+        // Close modal when clicking outside
+        document.getElementById('editModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
             }
         });
     </script>
