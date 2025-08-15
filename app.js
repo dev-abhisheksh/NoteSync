@@ -37,7 +37,7 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "login.html"));
 });
 
-app.get("/create", (req, res) => {
+app.get("/create-note", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "createNote.html"));
 
 });
