@@ -20,9 +20,13 @@ const noteSchema = mongoose.Schema({
     tags: {
         type: [String],
         default: [],
-    }
-
+    },
+    //files uploading 
+    files: [{
+        fileName: String,
+        fileUrl: String,
+        fileType: String
+    }]
 }, { timestamps: true })
-
 
 export const Note = mongoose.model("Note", noteSchema)

@@ -1,21 +1,57 @@
 import { Note } from "../models/note.model.js"
-import { verifyJWT } from "../middlewares/auth.middleware.js"
-import { Users } from "../models/user.model.js";
+import { uploadOnCloudinary } from "../utils/cloudinary.js";
 
 const createNote = async (req, res) => {
-    const { name, content, isPublic, tags } = req.body;
+    const { name, content, isPublic } = req.body;
+
+    // Parse tags properly
+    let tags = [];
+    try {
+        if (req.body.tags) {
+            // If tags is a string (JSON), parse it
+            if (typeof req.body.tags === 'string') {
+                tags = JSON.parse(req.body.tags);
+            }
+            // If tags is already an array, use it directly
+            else if (Array.isArray(req.body.tags)) {
+                tags = req.body.tags;
+            }
+        }
+    } catch (error) {
+        // If JSON parsing fails, treat as comma-separated string
+        tags = req.body.tags ? req.body.tags.split(',').map(tag => tag.trim()).filter(tag => tag) : [];
+    }
+
     if (!name && !content && !isPublic) {
         return res.status(400).json({ message: "Each field is mandatory!!!" })
     }
     const userId = req.user._id
 
     try {
+        // Handle file uploads
+        let files = [];
+        if (req.files && req.files.length > 0) {
+            // Upload each file to Cloudinary
+            for (const file of req.files) {
+                const cloudinaryResponse = await uploadOnCloudinary(file.path);
+
+                if (cloudinaryResponse) {
+                    files.push({
+                        fileName: file.originalname,
+                        fileUrl: cloudinaryResponse.secure_url,
+                        fileType: file.mimetype
+                    });
+                }
+            }
+        }
+
         const note = await Note.create({
             name,
             content,
             isPublic,
-            tags,
-            owner: userId
+            tags, // Now properly parsed
+            owner: userId,
+            files
         });
 
         return res.status(200).json({ message: "Note created successfully", note })
@@ -23,7 +59,6 @@ const createNote = async (req, res) => {
         return res.status(500).json({ message: "Failed to create note", error })
     }
 }
-
 const getAllNotes = async (req, res) => {
     const notes = await Note.find();
     res.json(notes)
@@ -73,16 +108,19 @@ const getSingleUserNotes = async (req, res) => {
         // Get the authenticated user from req.user
         const user = req.user;
 
-        // Fetch notes
+        // Fetch notes with populated owner info (if needed)
         const notes = await Note.find({ owner: user._id });
 
-        console
         return res.status(200).json({
             message: notes.length ? "Fetched notes successfully" : "No notes found for this user",
-            notes: notes
+            notes: notes,
+            username: user.username || user.email || "User" // Include username
         });
     } catch (error) {
-        return res.status(500).json({ message: "Failed to fetch notes", error: error.message });
+        return res.status(500).json({
+            message: "Failed to fetch notes",
+            error: error.message
+        });
     }
 };
 
@@ -140,18 +178,18 @@ const deleteNote = async (req, res) => {
 const searchNotesByTag = async (req, res) => {
     try {
         let { tags } = req.body; // Since your route is POST
-        
+
         // Ensure it's always an array
         if (!Array.isArray(tags)) {
             tags = [tags];
         }
-        
+
         // Populate the owner field to get username
         const searchedNotes = await Note.find({
             tags: { $in: tags },
             isPublic: true
         }).populate('owner', 'username'); // Populate owner field with username only
-        
+
         return res.status(200).json({
             message: searchedNotes.length
                 ? "Successfully fetched public notes based on tags"
