@@ -1,24 +1,20 @@
 import { v2 as cloudinary } from "cloudinary";
-import fs from "fs";
 
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOULD_NAME,
     api_key: process.env.CLOUDINARY_API,
     api_secret: process.env.CLOUDINARY_SECRET
-})
+});
 
-const uploadOnCloudinary = async (localFilePath) => {
+const uploadOnCloudinary = async (fileBuffer) => {
+    if (!fileBuffer) return null;
     try {
-        if (!localFilePath) return null
-        const response = await cloudinary.uploader.upload(localFilePath, {
-            resource_type: 'auto'
-        })
-        fs.unlinkSync(localFilePath)
-        return response
+        const base64File = `data:application/octet-stream;base64,${fileBuffer.toString("base64")}`;
+        return await cloudinary.uploader.upload(base64File, { resource_type: "auto" });
     } catch (error) {
-        fs.unlinkSync(localFilePath)
-        return null
+        console.error("Cloudinary upload failed:", error);
+        return null;
     }
-}
+};
 
-export { uploadOnCloudinary }
+export { uploadOnCloudinary };

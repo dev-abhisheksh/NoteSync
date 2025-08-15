@@ -8,32 +8,30 @@ const createNote = async (req, res) => {
     let tags = [];
     try {
         if (req.body.tags) {
-            // If tags is a string (JSON), parse it
             if (typeof req.body.tags === 'string') {
                 tags = JSON.parse(req.body.tags);
-            }
-            // If tags is already an array, use it directly
-            else if (Array.isArray(req.body.tags)) {
+            } else if (Array.isArray(req.body.tags)) {
                 tags = req.body.tags;
             }
         }
     } catch (error) {
-        // If JSON parsing fails, treat as comma-separated string
-        tags = req.body.tags ? req.body.tags.split(',').map(tag => tag.trim()).filter(tag => tag) : [];
+        tags = req.body.tags
+            ? req.body.tags.split(',').map(tag => tag.trim()).filter(tag => tag)
+            : [];
     }
 
     if (!name && !content && !isPublic) {
-        return res.status(400).json({ message: "Each field is mandatory!!!" })
+        return res.status(400).json({ message: "Each field is mandatory!!!" });
     }
-    const userId = req.user._id
+
+    const userId = req.user._id;
 
     try {
-        // Handle file uploads
         let files = [];
         if (req.files && req.files.length > 0) {
-            // Upload each file to Cloudinary
             for (const file of req.files) {
-                const cloudinaryResponse = await uploadOnCloudinary(file.path);
+                // Upload file directly from buffer
+                const cloudinaryResponse = await uploadOnCloudinary(file.buffer);
 
                 if (cloudinaryResponse) {
                     files.push({
@@ -49,16 +47,18 @@ const createNote = async (req, res) => {
             name,
             content,
             isPublic,
-            tags, // Now properly parsed
+            tags,
             owner: userId,
             files
         });
 
-        return res.status(200).json({ message: "Note created successfully", note })
+        return res.status(200).json({ message: "Note created successfully", note });
     } catch (error) {
-        return res.status(500).json({ message: "Failed to create note", error })
+        return res.status(500).json({ message: "Failed to create note", error });
     }
-}
+};
+
+
 const getAllNotes = async (req, res) => {
     const notes = await Note.find();
     res.json(notes)
